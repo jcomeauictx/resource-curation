@@ -7,4 +7,12 @@ case $verb in
   else
    echo Filename is a required argument >&2
   fi;;
+ "remove")
+  if [ "$2" ]; then
+   ipfs pin rm $2
+   ipfs repo gc
+  else
+   echo CID is a required argument >&2
+  fi;;
+esac
   
