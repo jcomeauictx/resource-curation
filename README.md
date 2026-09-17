@@ -28,3 +28,7 @@ update add _dnslink.yourdomain.com 60 TXT "/ipfs/<CID>"
 send
 EOF
 ```
+
+## developer's notes
+* Use human-readable IDs of less than 46 characters, the length of a CIDv0 hash.
+* `rndc sync example.com` flushes `nsupdate`s to the zone file. can be done from a cron job.
