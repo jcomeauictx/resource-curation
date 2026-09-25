@@ -29,3 +29,4 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db
 		echo '$(INCLUDE)' | sudo tee -a $(NAMED_LOCAL); \
 	fi
 	touch $@
+.PRECIOUS: $(BIND)/% $(BIND)/local/%
