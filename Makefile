@@ -1,8 +1,11 @@
 SHELL := /bin/bash
 INSTALLED := .installed
 BIND := /etc/bind
+NAMED_LOCAL := $(BIND)/named.conf.local
 CURATION_DOMAIN := resources.internal
+INCLUDE := include "/etc/bind/$(CURATION_DOMAIN).conf";
 
+bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
 $(INSTALLED)/nsupdate: | $(INSTALLED)
 	sudo apt install bind9-dnsutils
 	touch $@
@@ -14,3 +17,13 @@ $(INSTALLED)/bind9: | $(INSTALLED)
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
+$(BIND)/%: %
+	sudo cp -f $< $@
+$(BIND)/local/%: %
+	sudo cp -f $< $@
+$(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db
+	# the prerequisites ensure %=$(CURATION_DOMAIN)
+	if ! grep -q '^$(INCLUDE)$$' $(NAMED_LOCAL); then \
+		echo '$(INCLUDE)' | sudo tee -a $(NAMED_LOCAL); \
+	fi
+	touch $@
