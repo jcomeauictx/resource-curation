@@ -30,4 +30,7 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	fi
 	sudo systemctl restart named
 	touch $@
+restart status:
+	sudo systemctl $@ named
 .PRECIOUS: $(BIND)/% $(BIND)/local/%
+.PHONY: restart status

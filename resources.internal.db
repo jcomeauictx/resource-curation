@@ -1,9 +1,10 @@
 $TTL	10800	; time-to-live in seconds
 @	IN	SOA	ns001 root.ns001 (
-			20260924182331  ; serial
+			2026092400	; serial
 			3600		; refresh
 			600		; retry
 			7200		; expire
 			3600 )		; negative cache TTL
 @	IN	NS	ns001
 @	IN	A	127.0.0.1
+ns001	IN	A	127.0.0.1
