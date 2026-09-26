@@ -12,8 +12,8 @@ $(INSTALLED)/nsupdate: | $(INSTALLED)
 $(INSTALLED):
 	mkdir --parents $@
 $(BIND): | $(INSTALLED)/bind9
-$(BIND)/local: $(BIND)
-	sudo mkdir $@
+$(BIND)/local: | $(BIND)
+	sudo mkdir --parents $@
 $(INSTALLED)/bind9: | $(INSTALLED)
 	sudo apt install bind9 bind9-dnsutils
 	touch $@
@@ -23,10 +23,11 @@ $(BIND)/%: %
 	sudo cp -f $< $@
 $(BIND)/local/%: % | $(BIND)/local
 	sudo cp -f $< $@
-$(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db
+$(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	# the prerequisites ensure %=$(CURATION_DOMAIN)
 	if ! grep -q '^$(INCLUDE)$$' $(NAMED_LOCAL); then \
 		echo '$(INCLUDE)' | sudo tee -a $(NAMED_LOCAL); \
 	fi
+	sudo systemctl restart named
 	touch $@
 .PRECIOUS: $(BIND)/% $(BIND)/local/%
