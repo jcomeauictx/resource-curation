@@ -4,6 +4,15 @@ BIND := /etc/bind
 NAMED_LOCAL := $(BIND)/named.conf.local
 CURATION_DOMAIN := resources.internal
 INCLUDE := include "/etc/bind/$(CURATION_DOMAIN).conf";
+# serial number for DNS zone; may need to support other suffixes than 00
+# someday, but this should work for now
+SERIAL := $(shell date +%Y%m%d)00
+
+ifeq ($(SHOWENV),)
+export CURATION_DOMAIN SERIAL
+else
+export
+endif
 
 bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
 $(INSTALLED)/nsupdate: | $(INSTALLED)
@@ -19,10 +28,10 @@ $(INSTALLED)/bind9: | $(INSTALLED)
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
-$(BIND)/%: %
-	sudo cp -f $< $@
-$(BIND)/local/%: % | $(BIND)/local
-	sudo cp -f $< $@
+$(BIND)/%.conf: curation_zone.conf Makefile
+	envsubst < $< | sudo tee $@
+$(BIND)/local/%.db: curation_zone.db Makefile | $(BIND)/local
+	sudo cp $< $@
 $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	# the prerequisites ensure %=$(CURATION_DOMAIN)
 	if ! grep -q '^$(INCLUDE)$$' $(NAMED_LOCAL); then \
@@ -32,5 +41,11 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	touch $@
 restart status:
 	sudo systemctl $@ named
+env:
+ifeq ($(SHOWENV),)
+	$(MAKE) SHOWENV=1 $@
+else
+	$@
+endif
 .PRECIOUS: $(BIND)/% $(BIND)/local/%
 .PHONY: restart status
