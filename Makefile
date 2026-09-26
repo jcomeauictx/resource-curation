@@ -15,14 +15,14 @@ else
 export
 endif
 
-all: resolver_install bind_install ipfs_install
+all: resolver_install bind_install
 bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
 resolver_install: $(INSTALLED)/internal.conf
 ipfs_install: $(INSTALLED)/ipfs
 	$(MAKE) -f kubo.mk /usr/bin/ipfs clean-kubo
 	ipfs init --profile=server
 	touch $@
-$(INSTALLED)/internal.conf: $(BIND)/local/$(CURATION_DOMAIN).conf
+$(INSTALLED)/internal.conf: $(BIND)/$(CURATION_DOMAIN).conf
 	touch $@
 $(RESOLVE)/%: % Makefile
 	sudo cp $< $@
