@@ -5,7 +5,7 @@ KUBO_URL := $(KUBO_WEBSITE)/kubo_v$(KUBO_VERSION)_linux-$(KUBO_ARCH).tar.gz
 KUBO_DEB := kubo_$(KUBO_VERSION)_$(KUBO_ARCH).deb
 
 /usr/bin/ipfs: $(KUBO_DEB)
-	sudo dpkg -i $
+	sudo dpkg -i $<
 
 $(KUBO_DEB): kubo/ipfs
 	mkdir -p kubo-deb/DEBIAN kubo-deb/usr/bin kubo-deb/usr/share/doc/kubo
@@ -16,7 +16,7 @@ $(KUBO_DEB): kubo/ipfs
 	rm -rf kubo-deb
 
 kubo/ipfs: kubo_v$(KUBO_VERSION)_linux-$(KUBO_ARCH).tar.gz
-	tar -xzf $
+	tar -xzf $<
 
 kubo_v$(KUBO_VERSION)_linux-$(KUBO_ARCH).tar.gz:
 	wget $(KUBO_URL)
