@@ -23,11 +23,12 @@ $(INSTALLED)/ipfs:
 	$(MAKE) -f kubo.mk /usr/bin/ipfs clean-kubo
 	ipfs init --profile=server
 	touch $@
-$(INSTALLED)/%: $(RESOLVE)/%
+$(INSTALLED)/internal.conf: $(RESOLVE)/internal.conf
 	touch $@
 $(RESOLVE)/%: % Makefile
 	sudo cp $< $@
 	sudo systemctl restart systemd-resolved
+	resolvectl flush-caches
 $(INSTALLED)/nsupdate: | $(INSTALLED)
 	sudo apt install bind9-dnsutils
 	touch $@
