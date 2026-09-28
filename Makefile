@@ -17,7 +17,7 @@ endif
 
 all: resolver_install bind_install
 bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
-resolver_install: $(INSTALLED)/internal.conf
+#resolver_install: $(INSTALLED)/internal.conf
 ipfs_install: $(INSTALLED)/ipfs
 $(INSTALLED)/ipfs:
 	$(MAKE) -f kubo.mk /usr/bin/ipfs clean-kubo
