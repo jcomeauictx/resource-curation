@@ -32,3 +32,4 @@ EOF
 ## developer's notes
 * Use human-readable IDs of less than 46 characters, the length of a CIDv0 hash.
 * `rndc sync example.com` flushes `nsupdate`s to the zone file. can be done from a cron job.
+* No easy way to fix resolver to query local bind server for .internal domains, due to conflicts between network manager and systemd-resolved. Still trying to think of a good solution.
