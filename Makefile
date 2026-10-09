@@ -55,6 +55,9 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	touch $@
 restart status:
 	sudo systemctl $@ named
+# configure NetworkManager to leave resolv.conf alone
+/etc/NetworkManager/NetworkManager.conf: Makefile
+	grep -qF 'dns=none' $@ || sudo sed -i '/^\[main\]/a dns=none' $@
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
