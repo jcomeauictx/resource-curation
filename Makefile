@@ -2,12 +2,14 @@ SHELL := /bin/bash
 INSTALLED := .installed
 BIND := /etc/bind
 NAMED_LOCAL := $(BIND)/named.conf.local
+NAMED_OPTIONS := $(BIND)/named.conf.options
 CURATION_DOMAIN := resources.internal
 INCLUDE := include "/etc/bind/$(CURATION_DOMAIN).conf";
 # serial number for DNS zone; may need to support other suffixes than 00
 # someday, but this should work for now
 SERIAL := $(shell date +%Y%m%d)00
 RESOLVE := /etc/systemd/resolved.conf.d
+NS_LOCALHOST := nameserver 127.0.0.1
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL
@@ -17,13 +19,12 @@ endif
 
 all: resolver_install bind_install
 bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
-#resolver_install: $(INSTALLED)/internal.conf
+resolver_install: ns_install /etc/resolv.conf
+ns_install
 ipfs_install: $(INSTALLED)/ipfs
 $(INSTALLED)/ipfs:
 	$(MAKE) -f kubo.mk /usr/bin/ipfs clean-kubo
 	ipfs init --profile=server
-	touch $@
-$(INSTALLED)/internal.conf: $(RESOLVE)/internal.conf
 	touch $@
 $(RESOLVE)/%: % Makefile
 	sudo cp $< $@
@@ -58,6 +59,19 @@ restart status:
 # configure NetworkManager to leave resolv.conf alone
 /etc/NetworkManager/NetworkManager.conf: Makefile
 	grep -qF 'dns=none' $@ || sudo sed -i '/^\[main\]/a dns=none' $@
+/etc/resolv.conf: Makefile
+	grep -qF '$(NS_LOCALHOST)' $@ || echo '$(NS_LOCALHOST)' | sudo tee $@
+$(NAMED_OPTIONS): Makefile
+	recursion=$(awk '$$1 == recursion {print $$2}' $@);
+	if [ "$$recursion" = "yes" ]; then \
+	 echo bind9 is already enabled for recursion >&2; \
+	elif [ "$$recursion" = "" ]; then \
+	 sudo sed -i '/^};$$/irecursion yes;' $@;
+	 sudo sed -i '/^};$$/iallow-recursion { localhost; };' $@;
+	else \
+	 echo bind9 recursion already set to $$recursion; false; \
+	fi
+	sudo systemctl restart named
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
