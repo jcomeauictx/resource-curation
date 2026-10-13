@@ -4,12 +4,17 @@ BIND := /etc/bind
 NAMED_LOCAL := $(BIND)/named.conf.local
 NAMED_OPTIONS := $(BIND)/named.conf.options
 CURATION_DOMAIN := resources.internal
-INCLUDE := include "/etc/bind/$(CURATION_DOMAIN).conf";
+CURATION_CONF := $(BIND)/$(CURATION_DOMAIN).conf
+INCLUDE := include "$(CURATION_CONF)";
 # serial number for DNS zone; may need to support other suffixes than 00
 # someday, but this should work for now
 SERIAL := $(shell date +%Y%m%d)00
 RESOLVE := /etc/systemd/resolved.conf.d
+RESOLV_CONF := /etc/resolv.conf
 NS_LOCALHOST := nameserver 127.0.0.1
+IPFS := /usr/bin/ipfs
+NM := NetworkManager
+NM_CONF := /etc/$(NM)/$(NM).conf
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL
@@ -17,19 +22,13 @@ else
 export
 endif
 
-all: resolver_install bind_install
-bind_install: $(INSTALLED)/$(CURATION_DOMAIN).conf
-resolver_install: ns_install /etc/resolv.conf
-ns_install
-ipfs_install: $(INSTALLED)/ipfs
-$(INSTALLED)/ipfs:
-	$(MAKE) -f kubo.mk /usr/bin/ipfs clean-kubo
+all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
+ $(NAMED_OPTIONS) $(NM_CONF)
+$(INSTALLED)/ipfs: $(IPFS)
 	ipfs init --profile=server
 	touch $@
-$(RESOLVE)/%: % Makefile
-	sudo cp $< $@
-	sudo systemctl restart systemd-resolved
-	resolvectl flush-caches
+$(IPFS):
+	$(MAKE) -f kubo.mk $(IPFS) clean-kubo
 $(INSTALLED)/nsupdate: | $(INSTALLED)
 	sudo apt install bind9-dnsutils
 	touch $@
@@ -57,17 +56,25 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 restart status:
 	sudo systemctl $@ named
 # configure NetworkManager to leave resolv.conf alone
-/etc/NetworkManager/NetworkManager.conf: Makefile
-	grep -qF 'dns=none' $@ || sudo sed -i '/^\[main\]/a dns=none' $@
-/etc/resolv.conf: Makefile
-	grep -qF '$(NS_LOCALHOST)' $@ || echo '$(NS_LOCALHOST)' | sudo tee $@
+$(NM_CONF): Makefile
+	if grep -qF 'dns=none' $@; then \
+	 echo $(NM) already configured to leave $(RESOLV_CONF) alone >&2; \
+	else \
+	 sudo sed -i '/^\[main\]/a dns=none' $@; \
+	fi
+$(RESOLV_CONF): Makefile
+	if grep -qF '$(NS_LOCALHOST)' $@; then \
+	 echo $@ already set up for local bind9 resolution >&2; \
+	else \
+	 echo '$(NS_LOCALHOST)' | sudo tee $@; \
+	fi
 $(NAMED_OPTIONS): Makefile
-	recursion=$(awk '$$1 == recursion {print $$2}' $@);
+	recursion=$(awk '$$1 == recursion {print $$2}' $@); \
 	if [ "$$recursion" = "yes" ]; then \
 	 echo bind9 is already enabled for recursion >&2; \
 	elif [ "$$recursion" = "" ]; then \
-	 sudo sed -i '/^};$$/irecursion yes;' $@;
-	 sudo sed -i '/^};$$/iallow-recursion { localhost; };' $@;
+	 sudo sed -i '/^};$$/irecursion yes;' $@; \
+	 sudo sed -i '/^};$$/iallow-recursion { localhost; };' $@; \
 	else \
 	 echo bind9 recursion already set to $$recursion; false; \
 	fi
