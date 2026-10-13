@@ -33,3 +33,4 @@ EOF
 * Use human-readable IDs of less than 46 characters, the length of a CIDv0 hash.
 * `rndc sync example.com` flushes `nsupdate`s to the zone file. can be done from a cron job.
 * No easy way to fix resolver to query local bind server for .internal domains, due to conflicts between network manager and systemd-resolved. Finally settled on a full bind9 solution, which is authoritative for .internal and recurses to resolve everything else. Must set `/etc/resolv.conf` to use localhost, and set NetworkManager to not overwrite it.
+* Install IPFS Companion browser extension to use local ipfs at localhost:8080
