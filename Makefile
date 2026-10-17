@@ -30,7 +30,7 @@ $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE)
 	touch $@
 $(IPFS):
 	$(MAKE) -f kubo.mk $(IPFS) clean-kubo
-$(SYSTEMD_USER)/(IPFS_SERVICE): $(IPFS_SERVICE) .FORCE | $(SYSTEMD_USER)
+$(SYSTEMD_USER)/$(IPFS_SERVICE): $(IPFS_SERVICE) .FORCE | $(SYSTEMD_USER)
 	cp -i $< $@
 	# init fails on 2nd attempt because keys already created, ignore it
 	-ipfs init --profile=server
