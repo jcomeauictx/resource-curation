@@ -27,16 +27,16 @@ endif
 all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
  $(NAMED_OPTIONS) $(NM_CONF)
 $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE)
-	# fails on 2nd attempt because keys already created
-	-ipfs init --profile=server
 	touch $@
 $(IPFS):
 	$(MAKE) -f kubo.mk $(IPFS) clean-kubo
-$(SYSTEMD_USER)/(IPFS_SERVICE): $(IPFS_SERVICE) | $(SYSTEMD_USER)
+$(SYSTEMD_USER)/(IPFS_SERVICE): $(IPFS_SERVICE) .FORCE | $(SYSTEMD_USER)
 	cp -i $< $@
+	# init fails on 2nd attempt because keys already created, ignore it
+	-ipfs init --profile=server
 	systemctl --user daemon-reload
-	-systemctl --user stop $<
-	systemctl --user start $<
+	systemctl --user stop $<
+	systemctl --user enable --now $<
 $(SYSTEMD_USER):
 	mkdir --parents $@
 $(INSTALLED)/nsupdate: | $(INSTALLED)
@@ -79,8 +79,8 @@ $(RESOLV_CONF): Makefile
 	 echo '$(NS_LOCALHOST)' | sudo tee $@; \
 	fi
 $(NAMED_OPTIONS): Makefile
-	recursion=$$(awk '$$1 == recursion {print $$2}' $@); \
-	if [ "$$recursion" = "yes" ]; then \
+	recursion=$$(awk '$$1 == "recursion" {print $$2}' $@); \
+	if [ "$$recursion" = "yes;" ]; then \
 	 echo bind9 is already enabled for recursion >&2; \
 	elif [ "$$recursion" = "" ]; then \
 	 sudo sed -i '/^};$$/i\\trecursion yes;' $@; \
@@ -98,3 +98,4 @@ else
 endif
 .PRECIOUS: $(BIND)/% $(BIND)/local/%
 .PHONY: restart status
+.FORCE:
