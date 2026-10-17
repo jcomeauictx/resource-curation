@@ -13,6 +13,8 @@ RESOLVE := /etc/systemd/resolved.conf.d
 RESOLV_CONF := /etc/resolv.conf
 NS_LOCALHOST := nameserver 127.0.0.1
 IPFS := /usr/bin/ipfs
+SYSTEMD_USER := $(HOME)/.config/systemd/user
+IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
 
@@ -24,11 +26,19 @@ endif
 
 all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
  $(NAMED_OPTIONS) $(NM_CONF)
-$(INSTALLED)/ipfs: $(IPFS)
-	ipfs init --profile=server
+$(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE)
+	# fails on 2nd attempt because keys already created
+	-ipfs init --profile=server
 	touch $@
 $(IPFS):
 	$(MAKE) -f kubo.mk $(IPFS) clean-kubo
+$(SYSTEMD_USER)/(IPFS_SERVICE): $(IPFS_SERVICE) | $(SYSTEMD_USER)
+	cp -i $< $@
+	systemctl --user daemon-reload
+	-systemctl --user stop $<
+	systemctl --user start $<
+$(SYSTEMD_USER):
+	mkdir --parents $@
 $(INSTALLED)/nsupdate: | $(INSTALLED)
 	sudo apt install bind9-dnsutils
 	touch $@
@@ -69,12 +79,13 @@ $(RESOLV_CONF): Makefile
 	 echo '$(NS_LOCALHOST)' | sudo tee $@; \
 	fi
 $(NAMED_OPTIONS): Makefile
-	recursion=$(awk '$$1 == recursion {print $$2}' $@); \
+	recursion=$$(awk '$$1 == recursion {print $$2}' $@); \
 	if [ "$$recursion" = "yes" ]; then \
 	 echo bind9 is already enabled for recursion >&2; \
 	elif [ "$$recursion" = "" ]; then \
-	 sudo sed -i '/^};$$/irecursion yes;' $@; \
-	 sudo sed -i '/^};$$/iallow-recursion { localhost; };' $@; \
+	 sudo sed -i '/^};$$/i\\trecursion yes;' $@; \
+	 sudo sed -i '/^};$$/i\\tallow-recursion { localhost; };' $@; \
+	 echo bind9 now set for recursive lookups >&2; \
 	else \
 	 echo bind9 recursion already set to $$recursion; false; \
 	fi
