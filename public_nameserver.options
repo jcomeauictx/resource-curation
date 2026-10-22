@@ -1,0 +1,6 @@
+tls local-tls {
+	cert-file "/etc/bind/dot.crt";
+	key-file "/etc/bind/dot.key";
+};
+
+listen-on port 853 tls local-tls { any; };
