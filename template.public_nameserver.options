@@ -1,0 +1,12 @@
+tls $PUBLIC_SHORTNAME {
+    remote-hostname "$PUBLIC_NAMESERVER";
+    ca-file "/etc/bind/$PUBLIC_SHORTNAME-dot.crt";
+};
+
+zone "$PUBLIC_TLD" {
+    type forward;
+    forwarders port 853 {
+        $PUBLIC_NAMESERVER_IP tls $PUBLIC_SHORTNAME;
+    };
+    forward only;
+};

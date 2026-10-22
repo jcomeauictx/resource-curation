@@ -12,11 +12,13 @@ SERIAL := $(shell date +%Y%m%d)00
 RESOLVE := /etc/systemd/resolved.conf.d
 RESOLV_CONF := /etc/resolv.conf
 NS_LOCALHOST := nameserver 127.0.0.1
+IPFS_DIR := $(HOME)/.ipfs
 IPFS := /usr/bin/ipfs
 SYSTEMD_USER := $(HOME)/.config/systemd/user
 IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
+PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%%%.*})
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL
@@ -26,14 +28,21 @@ endif
 
 all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
  $(NAMED_OPTIONS) $(NM_CONF)
-$(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE)
+GNUmakefile:
+	@echo copy template.$@ to $@, and edit for your chosen public >&2
+	@echo TLD and nameserver. If the hostname part of the nameserver is >&2
+	@echo not a suitable abbreviation, define PUBLIC_SHORTNAME as well.
+	false
+%: template.%
+	envsubst < $> > $@
+$(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE) $(IPFS_DIR)
 	touch $@
 $(IPFS):
 	$(MAKE) -f kubo.mk $(IPFS) clean-kubo
-$(SYSTEMD_USER)/$(IPFS_SERVICE): $(IPFS_SERVICE) .FORCE | $(SYSTEMD_USER)
+$(IPFS_DIR):
+	ipfs init --profile=server
+$(SYSTEMD_USER)/$(IPFS_SERVICE): $(IPFS_SERVICE) | $(SYSTEMD_USER)
 	cp -i $< $@
-	# init fails on 2nd attempt because keys already created, ignore it
-	-ipfs init --profile=server
 	systemctl --user daemon-reload
 	systemctl --user stop $<
 	systemctl --user enable --now $<
