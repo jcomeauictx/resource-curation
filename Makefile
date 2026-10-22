@@ -18,10 +18,10 @@ SYSTEMD_USER := $(HOME)/.config/systemd/user
 IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
-PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%%%.*})
+PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
 
 ifeq ($(SHOWENV),)
-export CURATION_DOMAIN SERIAL
+export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
 else
 export
 endif
