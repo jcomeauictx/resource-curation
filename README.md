@@ -35,3 +35,4 @@ EOF
 * No easy way to fix resolver to query local bind server for .internal domains, due to conflicts between network manager and systemd-resolved. Finally settled on a full bind9 solution, which is authoritative for .internal and recurses to resolve everything else. Must set `/etc/resolv.conf` to use localhost, and set NetworkManager to not overwrite it.
 * Install IPFS Companion browser extension to use local ipfs at localhost:8080
 * EERO routers mess with DNS. Only the custom TLD on localhost can be expected to work.
+* There is no direct link from an IPFS object to its original file, even on the same machine on which the `ipfs add` was run. Also, IPFS databases can get corrupted, and DNS servers can crash. So we'll make a $HOME/.resource-curation directory and put in symlinks from the IPFS CIDs to both the original files and to the curated names.

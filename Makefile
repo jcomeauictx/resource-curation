@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 INSTALLED := .installed
 BIND := /etc/bind
+APPNAME := $(notdir $(CURDIR))
 NAMED_LOCAL := $(BIND)/named.conf.local
 NAMED_OPTIONS := $(BIND)/named.conf.options
 CURATION_DOMAIN := resources.internal
@@ -19,6 +20,7 @@ IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
+REPOSITORY := $(HOME)/.$(APPNAME)
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
