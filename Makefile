@@ -29,7 +29,7 @@ export
 endif
 
 all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
- $(NAMED_OPTIONS) $(NM_CONF)
+ $(NAMED_OPTIONS) $(NM_CONF) $(BIND)/dot.key
 GNUmakefile:
 	@echo copy template.$@ to $@, and edit for your chosen public >&2
 	@echo TLD and nameserver. If the hostname part of the nameserver is >&2
@@ -63,9 +63,9 @@ $(INSTALLED)/bind9: | $(INSTALLED)
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
-$(BIND)/%.conf: curation_zone.conf Makefile
+$(BIND)/%.conf: curation_zone.conf
 	envsubst < $< | sudo tee $@
-$(BIND)/local/%.db: curation_zone.db Makefile | $(BIND)/local
+$(BIND)/local/%.db: curation_zone.db | $(BIND)/local
 	sudo cp $< $@
 $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 	# the prerequisites ensure %=$(CURATION_DOMAIN)
@@ -77,19 +77,19 @@ $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
 restart status:
 	sudo systemctl $@ named
 # configure NetworkManager to leave resolv.conf alone
-$(NM_CONF): Makefile
+$(NM_CONF):
 	if grep -qF 'dns=none' $@; then \
 	 echo $(NM) already configured to leave $(RESOLV_CONF) alone >&2; \
 	else \
 	 sudo sed -i '/^\[main\]/a dns=none' $@; \
 	fi
-$(RESOLV_CONF): Makefile
+$(RESOLV_CONF):
 	if grep -qF '$(NS_LOCALHOST)' $@; then \
 	 echo $@ already set up for local bind9 resolution >&2; \
 	else \
 	 echo '$(NS_LOCALHOST)' | sudo tee $@; \
 	fi
-$(NAMED_OPTIONS): Makefile
+$(NAMED_OPTIONS):
 	recursion=$$(awk '$$1 == "recursion" {print $$2}' $@); \
 	if [ "$$recursion" = "yes;" ]; then \
 	 echo bind9 is already enabled for recursion >&2; \
@@ -101,6 +101,10 @@ $(NAMED_OPTIONS): Makefile
 	 echo bind9 recursion already set to $$recursion; false; \
 	fi
 	sudo systemctl restart named
+$(BIND)/dot.key:
+	sudo openssl req -x509 -newkey rsa:4096 -keyout $@ \
+  	 -out $(@:.key=.crt) -days 3650 -nodes \
+  	 -subj "/CN=$(PUBLIC_NAMESERVER)"
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
