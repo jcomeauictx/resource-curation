@@ -9,14 +9,28 @@ case $verb in
   if [ "$object" ]; then
    if $(grep -e "$CID" "$object"); then
     if [ -e "$object" ]; then
+     # matches CID format but also exists as a file: abort
      echo Cannot determine whether "'$object'" is filename or CID >&2
      exit 1
-    else
+    elif [ -e "$object" ]; then  # it's a file
      cid=$(ipfs add --offline --quiet "$object")
      echo added "$2" as $cid >&2
-    for label in $labelnames; do
-     nsupdate -k $DNSKEY <<EOF
-
+    else
+     echo "'$object'" is not a filespec nor an IPFS CID >&2
+     exit 1
+    fi
+   else
+    cid=$object
+   fi
+   for label in $labelnames; do
+    nsupdate -k $DNSKEY <<-EOF
+	server your.bind9.server
+	zone yourdomain.com
+	update delete _dnslink.yourdomain.com TXT
+	update add _dnslink.yourdomain.com 60 TXT "/ipfs/$cid"
+	send
+	EOF
+   done
   else
    echo 'Usage: $0 $verb FILENAME|CID [LABELNAME ...]' >&2
    exit 2
@@ -35,4 +49,3 @@ case $verb in
    echo CID is a required argument >&2
   fi;;
 esac
-  
