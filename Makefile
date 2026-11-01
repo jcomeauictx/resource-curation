@@ -105,6 +105,11 @@ $(BIND)/dot.key:
 	sudo openssl req -x509 -newkey rsa:4096 -keyout $@ \
   	 -out $(@:.key=.crt) -days 3650 -nodes \
   	 -subj "/CN=$(PUBLIC_NAMESERVER)"
+curate: GNUmakefile .FORCE
+	$(SILENT) chmod +x $<
+	$(SILENT) ln -sf $< $@
+	$(SILENT) echo curating...
+	$(MAKE) env
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
