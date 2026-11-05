@@ -11,4 +11,10 @@ export
 default:
 	$(MAKE) -f Makefile $(CURATE)  # if CURATE empty, will build default
 %:
-	$(MAKE) -f Makefile $*
+	@echo makefile name: $(MAKEFILE)
+	if [ -e $(MAKEFILE).sh ]; then \
+	 $(MAKE) -f Makefile env; \
+	 bash $(MAKEFILE).sh; \
+	else \
+	 $(MAKE) -f Makefile $*; \
+	fi
