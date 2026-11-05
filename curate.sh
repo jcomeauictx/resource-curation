@@ -3,7 +3,7 @@ CID='^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$'
 IPFS='echo ipfs' # precede with "echo" until basic testing complete
 verb=$1
 object=$2
-labelnames="${@3}"
+labelnames="${@:3}"
 case $verb in
  "local")
   if [ "$object" ]; then
@@ -48,4 +48,8 @@ case $verb in
   else
    echo CID is a required argument >&2
   fi;;
+ *)
+  echo verb "'$verb'" not recognized >&2
+  false
+  ;;
 esac
