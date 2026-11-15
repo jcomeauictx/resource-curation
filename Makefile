@@ -37,7 +37,7 @@ GNUmakefile:
 	@echo not a suitable abbreviation, define PUBLIC_SHORTNAME as well.
 	false
 check_env: $(REPOSITORY)/config.env
-	if -z [ "$(PUBLIC_TLD)" ] || [ "$(PUBLIC_TLD)" = "unset" ]; then \
+	if [ -z "$(PUBLIC_TLD)" ] || [ "$(PUBLIC_TLD)" = "unset" ]; then \
 	 echo You need to edit $< with valid values >&2; \
 	 false; \
 	else \
@@ -120,6 +120,8 @@ curate: GNUmakefile .FORCE
 	$(SILENT) ln -sf $< $@
 	$(SILENT) echo curating...
 	$(MAKE) env
+$(HOME)/%:
+	mkdir --parents $@
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
