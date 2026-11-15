@@ -2,13 +2,19 @@
 CID='^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$'
 IPFS='echo ipfs' # precede with "echo" until basic testing complete
 CONFIG=$HOME/.resource-curation/config.env
+CONFDIR=$(dirname $CONFIG)
+DNSKEY=/etc/bind/dnslink.key
 verb=$1
 object=$2
 labelnames="${@:3}"
 if [ -e "$CONFIG" ]; then
- source $HOME/.resource-curation/config.env
+ source $CONFIG
 else
  echo No configuration file located at $CONFIG >&2
+ exit 1
+fi
+if [ ! -e $DNSKEY ]; then \
+ echo 'Keyfile not properly installed, run `make install`' >&2
  exit 1
 fi
 if [ -z "$PUBLIC_TLD" ] || [ "$PUBLIC_TLD" = "unset" ]; then
@@ -35,10 +41,11 @@ case $verb in
    fi
    for label in $labelnames; do
     nsupdate -k $DNSKEY <<-EOF
-	server your.bind9.server
-	zone yourdomain.com
-	update delete _dnslink.yourdomain.com TXT
-	update add _dnslink.yourdomain.com 60 TXT "/ipfs/$cid"
+	server $PRIVATE_NAMESERVER
+	zone $PRIVATE_TLD
+	update delete _dnslink.$PRIVATE_TLD TXT
+	update add _dnslink.$PRIVATE_TLD 60 TXT "/ipfs/$cid"
+	update add $(basename $label).$PRIVATE_TLD TXT "$label"
 	send
 	EOF
    done

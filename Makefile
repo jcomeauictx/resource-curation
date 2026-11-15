@@ -22,6 +22,7 @@ NM_CONF := /etc/$(NM)/$(NM).conf
 REPOSITORY := $(HOME)/.$(APPNAME)
 include $(REPOSITORY)/config.env
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
+BINDIR ?= $(HOME)/.local/bin
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
@@ -29,8 +30,8 @@ else
 export
 endif
 
-all: check_env $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
- $(NAMED_OPTIONS) $(NM_CONF) $(BIND)/dot.key
+install: check_env $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
+ $(NAMED_OPTIONS) $(NM_CONF) $(BIND)/dot.key test
 GNUmakefile:
 	@echo copy template.$@ to $@, and edit for your chosen public >&2
 	@echo TLD and nameserver. If the hostname part of the nameserver is >&2
@@ -115,13 +116,15 @@ $(BIND)/dot.key:
 	sudo openssl req -x509 -newkey rsa:4096 -keyout $@ \
   	 -out $(@:.key=.crt) -days 3650 -nodes \
   	 -subj "/CN=$(PUBLIC_NAMESERVER)"
-curate: GNUmakefile .FORCE
-	$(SILENT) chmod +x $<
-	$(SILENT) ln -sf $< $@
-	$(SILENT) echo curating...
-	$(MAKE) env
+curate: curate.sh
+	chmod +x $<
+	ln -sf $< $@
+test: $(BINDIR)/curate
+	$< local testfile.txt this.is.a.test.txt
 $(HOME)/%:
 	mkdir --parents $@
+$(BINDIR)/%: %
+	ln -s $(CURDIR)/$< $@
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@
