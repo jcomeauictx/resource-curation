@@ -1,0 +1,1 @@
+This is a test. Useless except for testing function of curate.sh.
