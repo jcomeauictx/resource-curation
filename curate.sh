@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 CID='^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$'
 IPFS='echo ipfs' # precede with "echo" until basic testing complete
 CONFIG=$HOME/.resource-curation/config.env
@@ -59,6 +59,9 @@ case $verb in
   else
    echo CID is a required argument >&2
   fi;;
+ "")
+  echo Must specify one of: local remove publish >&2
+  ;;
  *)
   echo verb "'$verb'" not recognized >&2
   false
