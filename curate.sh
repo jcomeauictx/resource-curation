@@ -1,9 +1,20 @@
 #!/bin/bash
 CID='^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$'
 IPFS='echo ipfs' # precede with "echo" until basic testing complete
+CONFIG=$HOME/.resource-curation/config.env
 verb=$1
 object=$2
 labelnames="${@:3}"
+if [ -e "$CONFIG" ]; then
+ source $HOME/.resource-curation/config.env
+else
+ echo No configuration file located at $CONFIG >&2
+ exit 1
+fi
+if [ -z "$PUBLIC_TLD" ] || [ "$PUBLIC_TLD" = "unset" ]; then
+ echo Must edit $CONFIG with valid values >&2
+ exit 1
+fi
 case $verb in
  "local")
   if [ "$object" ]; then
