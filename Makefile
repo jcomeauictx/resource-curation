@@ -19,8 +19,9 @@ SYSTEMD_USER := $(HOME)/.config/systemd/user
 IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
-PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
 REPOSITORY := $(HOME)/.$(APPNAME)
+include $(REPOSITORY)/config.env
+PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
@@ -28,13 +29,22 @@ else
 export
 endif
 
-all: $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
+all: check_env $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
  $(NAMED_OPTIONS) $(NM_CONF) $(BIND)/dot.key
 GNUmakefile:
 	@echo copy template.$@ to $@, and edit for your chosen public >&2
 	@echo TLD and nameserver. If the hostname part of the nameserver is >&2
 	@echo not a suitable abbreviation, define PUBLIC_SHORTNAME as well.
 	false
+check_env: $(REPOSITORY)/config.env
+	if -z [ "$(PUBLIC_TLD)" ] || [ "$(PUBLIC_TLD)" = "unset" ]; then \
+	 echo You need to edit $< with valid values >&2; \
+	 false; \
+	else \
+	 echo Config looks valid >&2; \
+	fi
+$(REPOSITORY)/config.env: config.env | $(REPOSITORY)
+	cp $< $@
 %: template.%
 	envsubst < $> > $@
 $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE) $(IPFS_DIR)
