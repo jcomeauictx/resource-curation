@@ -39,13 +39,19 @@ case $verb in
    else
     cid=$object
    fi
-   for label in $labelnames; do
-    nsupdate -k $DNSKEY <<-EOF
+   nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
 	zone $PRIVATE_TLD
 	update delete _dnslink.$PRIVATE_TLD TXT
 	update add _dnslink.$PRIVATE_TLD 60 TXT "/ipfs/$cid"
-	update add $(basename $label).$PRIVATE_TLD TXT "$label"
+	send
+	EOF
+   for label in $labelnames; do
+    echo adding $label as TXT record to $PRIVATE_TLD >&2
+    nsupdate -k $DNSKEY <<-EOF
+	server $PRIVATE_NAMESERVER
+	zone $PRIVATE_TLD
+	update add $(basename $label) TXT "$label"
 	send
 	EOF
    done
