@@ -20,7 +20,7 @@ REPOSITORY := $(HOME)/.$(APPNAME)
 BINDIR ?= $(HOME)/.local/bin
 include $(REPOSITORY)/config.env
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
-CURATION_CONF := $(BIND)/$(PUBLIC_DOMAIN).conf
+CURATION_CONF := $(BIND)/$(PRIVATE_DOMAIN).conf
 INCLUDE := include "$(CURATION_CONF)";
 
 ifeq ($(SHOWENV),)
