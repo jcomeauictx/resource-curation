@@ -20,22 +20,19 @@ REPOSITORY := $(HOME)/.$(APPNAME)
 BINDIR ?= $(HOME)/.local/bin
 include $(REPOSITORY)/config.env
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
-CURATION_CONF := $(BIND)/$(CURATION_DOMAIN).conf
+CURATION_CONF := $(BIND)/$(PUBLIC_DOMAIN).conf
 INCLUDE := include "$(CURATION_CONF)";
 
 ifeq ($(SHOWENV),)
-export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
+export PUBLIC_TLD PUBLIC_DOMAIN PUBLIC_SHORTNAME PUBLIC_NAMESERVER \
+ PRIVATE_DOMAIN SERIAL
 else
 export
 endif
 
-install: check_env $(BIND) $(CURATION_CONF) $(RESOLV_CONF) $(INSTALLED)/ipfs \
+install: check_env $(BIND)/curation_zone.conf $(CURATION_CONF) \
+ $(RESOLV_CONF) $(INSTALLED)/ipfs \
  $(NAMED_OPTIONS) $(NM_CONF) $(BIND)/dot.key test
-GNUmakefile:
-	@echo copy template.$@ to $@, and edit for your chosen public >&2
-	@echo TLD and nameserver. If the hostname part of the nameserver is >&2
-	@echo not a suitable abbreviation, define PUBLIC_SHORTNAME as well.
-	false
 check_env: $(REPOSITORY)/config.env
 	if [ -z "$(PUBLIC_TLD)" ] || [ "$(PUBLIC_TLD)" = "unset" ]; then \
 	 echo You need to edit $< with valid values >&2; \
@@ -46,7 +43,7 @@ check_env: $(REPOSITORY)/config.env
 $(REPOSITORY)/config.env: config.env | $(REPOSITORY)
 	cp $< $@
 %: template.%
-	envsubst < $> > $@
+	envsubst < $< > $@
 $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE) $(IPFS_DIR)
 	touch $@
 $(IPFS):
@@ -73,12 +70,13 @@ $(INSTALLED)/bind9: | $(INSTALLED)
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
-$(BIND)/%.conf: curation_zone.conf
+$(BIND)/%: template.%
 	envsubst < $< | sudo tee $@
-$(BIND)/local/%.db: curation_zone.db | $(BIND)/local
-	sudo cp $< $@
-$(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
-	# the prerequisites ensure %=$(CURATION_DOMAIN)
+$(BIND)/local/%: template.% | $(BIND)/local
+	envsubst < $< | sudo tee $@
+$(INSTALLED)/%.conf: $(BIND)/curation_zone.conf \
+ $(BIND)/local/curation_zone.db \
+ $(BIND)/dnslink.key
 	if ! grep -q '^$(INCLUDE)$$' $(NAMED_LOCAL); then \
 		echo '$(INCLUDE)' | sudo tee -a $(NAMED_LOCAL); \
 	fi

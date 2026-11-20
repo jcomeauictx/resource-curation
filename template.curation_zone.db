@@ -1,6 +1,6 @@
 $TTL	10800	; time-to-live in seconds
 @	IN	SOA	ns root.ns (
-			2026092400	; serial
+			$SERIAL		; serial
 			3600		; refresh
 			600		; retry
 			7200		; expire
