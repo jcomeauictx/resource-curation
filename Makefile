@@ -4,9 +4,6 @@ BIND := /etc/bind
 APPNAME := $(notdir $(CURDIR))
 NAMED_LOCAL := $(BIND)/named.conf.local
 NAMED_OPTIONS := $(BIND)/named.conf.options
-CURATION_DOMAIN := resources.internal
-CURATION_CONF := $(BIND)/$(CURATION_DOMAIN).conf
-INCLUDE := include "$(CURATION_CONF)";
 # serial number for DNS zone; may need to support other suffixes than 00
 # someday, but this should work for now
 SERIAL := $(shell date +%Y%m%d)00
@@ -20,9 +17,11 @@ IPFS_SERVICE := ipfs.service
 NM := NetworkManager
 NM_CONF := /etc/$(NM)/$(NM).conf
 REPOSITORY := $(HOME)/.$(APPNAME)
+BINDIR ?= $(HOME)/.local/bin
 include $(REPOSITORY)/config.env
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
-BINDIR ?= $(HOME)/.local/bin
+CURATION_CONF := $(BIND)/$(CURATION_DOMAIN).conf
+INCLUDE := include "$(CURATION_CONF)";
 
 ifeq ($(SHOWENV),)
 export CURATION_DOMAIN SERIAL PUBLIC_SHORTNAME
@@ -125,6 +124,9 @@ $(HOME)/%:
 	mkdir --parents $@
 $(BINDIR)/%: %
 	ln -s $(CURDIR)/$< $@
+diff:
+	git diff
+	diff config.env $(REPOSITORY)
 env:
 ifeq ($(SHOWENV),)
 	$(MAKE) SHOWENV=1 $@

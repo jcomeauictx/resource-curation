@@ -17,6 +17,7 @@ if [ ! -e $DNSKEY ]; then \
  echo 'Keyfile not properly installed, run `make install`' >&2
  exit 1
 fi
+# check only for PUBLIC_TLD, assume all other variables present if it is valid
 if [ -z "$PUBLIC_TLD" ] || [ "$PUBLIC_TLD" = "unset" ]; then
  echo Must edit $CONFIG with valid values >&2
  exit 1
@@ -42,16 +43,16 @@ case $verb in
    nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
 	zone $PRIVATE_TLD
-	update delete _dnslink.curated.$PRIVATE_TLD TXT
-	update add _dnslink.curated.$PRIVATE_TLD 60 TXT "/ipfs/$cid"
+	update delete _dnslink.$PRIVATE_DOMAIN TXT
+	update add _dnslink.$PRIVATE_DOMAIN $PRIVATE_TTL TXT "/ipfs/$cid"
 	send
 	EOF
    for label in $labelnames; do
-    echo adding $label as TXT record to curated.$PRIVATE_TLD >&2
+    echo adding $label as TXT record to $PRIVATE_DOMAIN >&2
     nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
 	zone $PRIVATE_TLD
-	update add $(basename $label).curated TXT "$label"
+	update add $(basename $label).$PRIVATE_DOMAIN $PRIVATE_TTL TXT "$label"
 	send
 	EOF
    done
