@@ -22,10 +22,12 @@ include $(REPOSITORY)/config.env
 PUBLIC_SHORTNAME ?= $(shell echo $${PUBLIC_NAMESERVER%%.*})
 CURATION_CONF := $(BIND)/$(PRIVATE_DOMAIN).conf
 INCLUDE := include "$(CURATION_CONF)";
+EXPORT := PUBLIC_TLD PUBLIC_DOMAIN PUBLIC_SHORTNAME PUBLIC_NAMESERVER \
+ PRIVATE_DOMAIN SERIAL
+SHELL_FORMAT := $(addprefix $$, $(EXPORT))
 
 ifeq ($(SHOWENV),)
-export PUBLIC_TLD PUBLIC_DOMAIN PUBLIC_SHORTNAME PUBLIC_NAMESERVER \
- PRIVATE_DOMAIN SERIAL
+export $(EXPORT)
 else
 export
 endif
@@ -42,8 +44,8 @@ check_env: $(REPOSITORY)/config.env
 	fi
 $(REPOSITORY)/config.env: config.env | $(REPOSITORY)
 	cp $< $@
-%: template.%
-	envsubst < $< > $@
+%: template.% Makefile
+	envsubst $(SHELL_FORMAT) < $< > $@
 $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE) $(IPFS_DIR)
 	touch $@
 $(IPFS):
@@ -70,10 +72,12 @@ $(INSTALLED)/bind9: | $(INSTALLED)
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
-$(BIND)/%: template.%
-	envsubst < $< | sudo tee $@
-$(BIND)/local/%: template.% | $(BIND)/local
-	envsubst < $< | sudo tee $@
+$(BIND)/%: template.% Makefile
+	envsubst $(SHELL_FORMAT) < $< | sudo tee $@
+	sudo systemctl restart named
+$(BIND)/local/%: template.% Makefile | $(BIND)/local
+	envsubst $(SHELL_FORMAT) < $< | sudo tee $@
+	sudo systemctl restart named
 $(INSTALLED)/%.conf: $(BIND)/curation_zone.conf \
  $(BIND)/local/curation_zone.db \
  $(BIND)/dnslink.key
