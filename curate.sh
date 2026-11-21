@@ -42,17 +42,17 @@ case $verb in
    fi
    nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
-	zone $PRIVATE_TLD
-	update delete _dnslink.$PRIVATE_DOMAIN TXT
-	update add _dnslink.$PRIVATE_DOMAIN $PRIVATE_TTL TXT "/ipfs/$cid"
+	zone $PRIVATE_DOMAIN
+	update delete _dnslink TXT
+	update add _dnslink $PRIVATE_TTL TXT "/ipfs/$cid"
 	send
 	EOF
    for label in $labelnames; do
     echo adding $label as TXT record to $PRIVATE_DOMAIN >&2
     nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
-	zone $PRIVATE_TLD
-	update add $(basename $label).$PRIVATE_DOMAIN $PRIVATE_TTL TXT "$label"
+	zone $PRIVATE_DOMAIN
+	update add $(basename $label) $PRIVATE_TTL TXT "$label"
 	send
 	EOF
    done

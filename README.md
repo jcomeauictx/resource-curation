@@ -5,7 +5,7 @@ Claude recommended [dnslink](https://dnslink.dev/) for ipfs CIDs, and tor2web fo
 
 We'll be using nsupdate with a bind9 server for the actual curation part, mapping human-readable names to IPFS CIDs:
 
-First, get a key from the bind9 server: `tsig-keygen dnslink-key > /etc/bind/dnslink.key`, and copy it to the IPFS server.
+First, get a key from the bind9 server: `tsig-keygen dnslink.key > /etc/bind/dnslink.key`, and copy it to the IPFS server.
 
 Add to named.conf:
 ```
@@ -14,7 +14,7 @@ include "/etc/bind/dnslink.key";
 zone "yourdomain.com" {
     type master;
     file "/etc/bind/zones/yourdomain.com.db";
-    allow-update { key dnslink-key; };
+    allow-update { key dnslink.key; };
 };
 ```
 
