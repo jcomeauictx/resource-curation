@@ -44,7 +44,7 @@ check_env: $(REPOSITORY)/config.env
 	fi
 $(REPOSITORY)/config.env: config.env | $(REPOSITORY)
 	cp $< $@
-%: template.% Makefile
+%: template.%
 	envsubst '$(SHELL_FORMAT)' < $< > $@
 $(INSTALLED)/ipfs: $(IPFS) $(SYSTEMD_USER)/$(IPFS_SERVICE) $(IPFS_DIR)
 	touch $@
@@ -76,7 +76,7 @@ $(BIND)/%.conf: template.curation_zone.conf $(BIND)/local/%.db
 	@echo Rebuilding $@
 	envsubst '$(SHELL_FORMAT)' < $< | sudo tee $@
 	sudo systemctl restart named
-$(BIND)/local/%.db: template.curation_zone.db Makefile | $(BIND)/local
+$(BIND)/local/%.db: template.curation_zone.db | $(BIND)/local
 	@echo Rebuilding $@
 	envsubst '$(SHELL_FORMAT)' < $< | sudo tee $@
 $(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
@@ -134,6 +134,6 @@ ifeq ($(SHOWENV),)
 else
 	$@
 endif
-.PRECIOUS: $(BIND)/% $(BIND)/local/%
+.PRECIOUS: $(BIND)/%.conf $(BIND)/local/%.db
 .PHONY: restart status
 .FORCE:
