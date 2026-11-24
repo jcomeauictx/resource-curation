@@ -1,6 +1,9 @@
 SHELL := /bin/bash
 INSTALLED := .installed
 BIND := /etc/bind
+# named (and its AppArmor profile) can only write under /var/lib/bind,
+# and dynamic zones need a writable directory for the .jnl journal
+ZONEDIR := /var/lib/bind
 APPNAME := $(notdir $(CURDIR))
 NAMED_LOCAL := $(BIND)/named.conf.local
 NAMED_OPTIONS := $(BIND)/named.conf.options
@@ -65,21 +68,20 @@ $(INSTALLED)/nsupdate: | $(INSTALLED)
 $(INSTALLED):
 	mkdir --parents $@
 $(BIND): | $(INSTALLED)/bind9
-$(BIND)/local: | $(BIND)
-	sudo mkdir --parents $@
 $(INSTALLED)/bind9: | $(INSTALLED)
 	sudo apt install bind9 bind9-dnsutils
 	touch $@
 $(BIND)/dnslink.key: | $(BIND)
 	tsig-keygen $(@F) | sudo tee $@
-$(BIND)/%.conf: template.curation_zone.conf $(BIND)/local/%.db
+$(BIND)/%.conf: template.curation_zone.conf $(ZONEDIR)/%.db
 	@echo Rebuilding $@
 	envsubst '$(SHELL_FORMAT)' < $< | sudo tee $@
 	sudo systemctl restart named
-$(BIND)/local/%.db: template.curation_zone.db | $(BIND)/local
+$(ZONEDIR)/%.db: template.curation_zone.db | $(INSTALLED)/bind9
 	@echo Rebuilding $@
 	envsubst '$(SHELL_FORMAT)' < $< | sudo tee $@
-$(INSTALLED)/%.conf: $(BIND)/%.conf $(BIND)/local/%.db $(BIND)/dnslink.key
+	sudo chown bind:bind $@
+$(INSTALLED)/%.conf: $(BIND)/%.conf $(ZONEDIR)/%.db $(BIND)/dnslink.key
 	if ! grep -q '^$(INCLUDE)$$' $(NAMED_LOCAL); then \
 		echo '$(INCLUDE)' | sudo tee -a $(NAMED_LOCAL); \
 	fi
@@ -134,6 +136,6 @@ ifeq ($(SHOWENV),)
 else
 	$@
 endif
-.PRECIOUS: $(BIND)/%.conf $(BIND)/local/%.db
+.PRECIOUS: $(BIND)/%.conf $(ZONEDIR)/%.db
 .PHONY: restart status
 .FORCE:
