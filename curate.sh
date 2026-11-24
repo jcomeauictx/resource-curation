@@ -1,6 +1,6 @@
 #!/bin/bash -x
 CID='^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$'
-IPFS='echo ipfs' # precede with "echo" until basic testing complete
+IPFS='ipfs' # precede with "echo" until basic testing complete
 CONFIG=$HOME/.resource-curation/config.env
 CONFDIR=$(dirname $CONFIG)
 DNSKEY=/etc/bind/dnslink.key
@@ -61,14 +61,14 @@ case $verb in
   fi;;
  "remove")
   if [ "$2" ]; then
-   ipfs pin rm "$2"
-   ipfs repo gc
+   $IPFS pin rm "$2"
+   $IPFS repo gc
   else
    echo CID is a required argument >&2
   fi;;
  "publish")
   if [ "$2" ]; then
-   ipfs dht provide "$2"
+   $IPFS dht provide "$2"
   else
    echo CID is a required argument >&2
   fi;;
