@@ -25,26 +25,25 @@ fi
 case $verb in
  "local")
   if [ "$object" ]; then
-   if $(grep -e "$CID" "$object"); then
-    if [ -e "$object" ]; then
+   if [ -e "$object" ]; then
+    if [[ $object =~ $CID ]]; then
      # matches CID format but also exists as a file: abort
      echo Cannot determine whether "'$object'" is filename or CID >&2
      exit 1
-    elif [ -e "$object" ]; then  # it's a file
-     cid=$(ipfs add --offline --quiet "$object")
-     echo added "$2" as $cid >&2
-    else
-     echo "'$object'" is not a filespec nor an IPFS CID >&2
-     exit 1
     fi
-   else
+    cid=$($IPFS add --offline --quiet "$object")
+    echo added "$object" as $cid >&2
+   elif [[ $object =~ $CID ]]; then
     cid=$object
+   else
+    echo "'$object'" is not a filespec nor an IPFS CID >&2
+    exit 1
    fi
    nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
 	zone $PRIVATE_DOMAIN
-	update delete _dnslink TXT
-	update add _dnslink $PRIVATE_TTL TXT "/ipfs/$cid"
+	update delete _dnslink.$PRIVATE_DOMAIN TXT
+	update add _dnslink.$PRIVATE_DOMAIN $PRIVATE_TTL TXT "/ipfs/$cid"
 	send
 	EOF
    for label in $labelnames; do
@@ -52,7 +51,7 @@ case $verb in
     nsupdate -k $DNSKEY <<-EOF
 	server $PRIVATE_NAMESERVER
 	zone $PRIVATE_DOMAIN
-	update add $(basename $label) $PRIVATE_TTL TXT "$label"
+	update add $(basename $label).$PRIVATE_DOMAIN $PRIVATE_TTL TXT "$label"
 	send
 	EOF
    done
